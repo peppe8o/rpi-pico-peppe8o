@@ -24,13 +24,11 @@
 # G-271 HMC5883L library to use magnetometer with Raspberry PI Pico (MicroPython)
 # Ported from gvalkov/micropython-esp8266-hmc5883l code (ESP8266) -> https://github.com/gvalkov/micropython-esp8266-hmc5883l
 
-
 import math
 import machine
 
 from ustruct import pack
 from array import array
-
 
 class HMC5883L:
     __gain__ = {
