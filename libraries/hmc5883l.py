@@ -23,6 +23,7 @@
 #
 # G-271 HMC5883L library to use magnetometer with Raspberry PI Pico (MicroPython)
 # Ported from gvalkov/micropython-esp8266-hmc5883l code (ESP8266) -> https://github.com/gvalkov/micropython-esp8266-hmc5883l
+# X and Y calibration offsets added
 
 import math
 import machine
@@ -41,9 +42,15 @@ class HMC5883L:
         '5.6':  (6 << 5, 3.03),
         '8.1':  (7 << 5, 4.35)
     }
-
-    def __init__(self, scl=15, sda=14, address=30, gauss='1.3', declination=(0, 0)):
-        self.i2c = i2c = machine.SoftI2C(scl=machine.Pin(scl), sda=machine.Pin(sda), freq=100000)
+    
+    # Correction to be set after calibration
+    xs=1
+    ys=1
+    xb=0
+    yb=0
+    
+    def __init__(self, scl=15, sda=14, address=0x1e, gauss='1.9', declination=(3, 58)):
+        self.i2c = i2c = machine.SoftI2C(scl=machine.Pin(scl), sda=machine.Pin(sda), freq=15000)
 
         # Initialize sensor.
         i2c.start()
@@ -52,14 +59,14 @@ class HMC5883L:
         #   0bx11xxxxx  -> 8 samples averaged per measurement
         #   0bxxx100xx  -> 15 Hz, rate at which data is written to output registers
         #   0bxxxxxx00  -> Normal measurement mode
-        i2c.writeto_mem(30, 0x00, pack('B', 0b111000))
+        i2c.writeto_mem(0x1e, 0x00, pack('B', 0b111000))
 
         # Configuration register B:
         reg_value, self.gain = self.__gain__[gauss]
-        i2c.writeto_mem(30, 0x01, pack('B', reg_value))
+        i2c.writeto_mem(0x1e, 0x01, pack('B', reg_value))
 
         # Set mode register to continuous mode.
-        i2c.writeto_mem(30, 0x02, pack('B', 0x00))
+        i2c.writeto_mem(0x1e, 0x02, pack('B', 0x00))
         i2c.stop()
 
         # Convert declination (tuple of degrees and minutes) to radians.
@@ -72,19 +79,23 @@ class HMC5883L:
         data = self.data
         gain = self.gain
 
-        self.i2c.readfrom_mem_into(30, 0x03, data)
-
+        self.i2c.readfrom_mem_into(0x1e, 0x03, data)
+        
         x = (data[0] << 8) | data[1]
-        z = (data[2] << 8) | data[3]
         y = (data[4] << 8) | data[5]
-
+        z = (data[2] << 8) | data[3]
+        
         x = x - (1 << 16) if x & (1 << 15) else x
         y = y - (1 << 16) if y & (1 << 15) else y
         z = z - (1 << 16) if z & (1 << 15) else z
 
-        x = round(x * gain, 4)
-        y = round(y * gain, 4)
-        z = round(z * gain, 4)
+        x = x * gain
+        y = y * gain
+        z = z * gain
+        
+        # Apply calibration corrections
+        x = x * self.xs + self.xb
+        y = y * self.ys + self.yb
 
         return x, y, z
 
