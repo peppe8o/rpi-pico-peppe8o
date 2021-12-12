@@ -49,7 +49,7 @@ class HMC5883L:
     xb=0
     yb=0
     
-    def __init__(self, scl=15, sda=14, address=0x1e, gauss='1.9', declination=(3, 58)):
+    def __init__(self, scl=15, sda=14, address=0x1e, gauss='1.9', declination=(0, 0)):
         self.i2c = i2c = machine.SoftI2C(scl=machine.Pin(scl), sda=machine.Pin(sda), freq=15000)
 
         # Initialize sensor.
