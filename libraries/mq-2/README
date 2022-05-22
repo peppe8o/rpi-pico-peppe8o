@@ -1,0 +1,6 @@
+This MQ-2 Micropython library comes from https://github.com/kartun83/micropython-MQ libraries.
+With tis implementation I get the MQ-2 gas sensor working with Raspberry PI Pico microcontroller.
+
+The complete tutorial can be found in https://peppe8o.com including wiring diagram
+
+Any help on testing it, code corrections and calibration tips are welcome
